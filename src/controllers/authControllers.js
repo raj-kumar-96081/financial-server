@@ -23,37 +23,54 @@ const authController={
         }
         else {
             return req.status(400).json({
-                message: "Inoccrect email or password"
+                message: "Incorrect email or password"
             });
         }
     },
-    register: (req, res) => {
+    register: async (req, res) => {
         const { name, email, password } = req.body;
         if (!name || !email || !password) {
             return res.status(400).json({ message: 'All fields are required.' });
         }
-
-        const existingUser = users.find(user => user.email === email) ;
-        if (existingUser) {
-            return res.status(400).json({
-                message: `User already exists with this email: ${email}`
-            });
-        }
-
-        const newUser={id:users.length+1,
+       
+        
+        // const user=await userDao.create({
+        //     name:name,
+        //     email:email,
+        //     password:password
+        // })
+        userDao.create({
             name:name,
             email:email,
             password:password
-        };
-        users.push(newUser);
+        })
+            .then(u=>{
+                return res.status(200).json({
+                    message: 'User registered successfully.',
+                    user:{ id: u.id,
+                        name: u.name,
+                        email: u.email,
+                    }
+                });
+            })
+            .catch(error=>{
+            
+                if (error.code === 'USER_EXIST') { 
+                    console.log(error); 
+                    return res.status(400).json({ 
+                        message: 'User with the email already exist' 
+                    }); 
+                } else { 
+                    return res.status(500).json({ 
+                        message: "Internal server error" 
+                    }); 
+                }
+            })
+
+        
+        
         // res.status(200).json({ message: 'User registered successfully.', userId: newUser.id });
-        return res.status(200).json({
-            message: 'User registered successfully.',
-            user:{ id: newUser.id,
-                name: newUser.name,
-                email: newUser.email,
-            }
-        });
+        
     },
 };
 
