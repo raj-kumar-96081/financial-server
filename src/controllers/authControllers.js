@@ -1,5 +1,6 @@
 const users= require('../dao/userDb');
 const userDao=require('../dao/userDao');
+const bcrypt = require('bcryptjs');
 
 const authController={
     login: async (req, res) => {
@@ -15,7 +16,9 @@ const authController={
 
         const user=await userDao.findByEmail(email);
 
-        if (user && user.password === password) {
+        const IsMatch= await bcrypt.compare(password,user.password);
+
+        if (user && IsMatch) {
             return res.status(200).json({
                 message: `Login Successful.           Welcome ${user.name}`,
                 user:user
@@ -39,10 +42,14 @@ const authController={
         //     email:email,
         //     password:password
         // })
+
+        const salt= await bcrypt.genSalt(10);
+        const hashedPassword=await bcrypt.hash(password,salt);
+
         userDao.create({
             name:name,
             email:email,
-            password:password
+            password:hashedPassword
         })
             .then(u=>{
                 return res.status(200).json({
