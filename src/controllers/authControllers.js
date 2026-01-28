@@ -1,6 +1,8 @@
 const users= require('../dao/userDb');
 const userDao=require('../dao/userDao');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
 
 const authController={
     login: async (req, res) => {
@@ -16,24 +18,63 @@ const authController={
 
         const user=await userDao.findByEmail(email);
 
+        if (!user) {
+            return res.status(401).json({
+                error: "Invalid credentials"
+            });
+        }
+
         const IsMatch= await bcrypt.compare(password,user.password);
 
-        if (user && IsMatch) {
-            return res.status(200).json({
-                message: `Login Successful.           Welcome ${user.name}`,
-                user:user
+        if (!isPasswordMatch) {
+            return res.status(401).json({
+                error: "Invalid credentials"
             });
         }
-        else {
-            return req.status(400).json({
-                message: "Incorrect email or password"
-            });
-        }
+
+        // CREATE JWT
+        const token = jwt.sign(
+            { userId: user._id, email: user.email },
+            process.env.JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+
+        //  SET COOKIE
+        res.cookie('jwtToken', token, {
+            httpOnly: true,
+            secure: false, // true only in HTTPS
+            sameSite: 'strict'
+        });
+
+        return res.status(200).json({
+            message: "Login successful"
+            
+        });
+
+        // if (user && IsMatch) {
+        //     return res.status(200).json({
+        //         message: `Login Successful.           Welcome ${user.name}`,
+        //         user:user
+        //     });
+        // }
+        // else {
+        //     return req.status(400).json({
+        //         message: "Incorrect email or password"
+        //     });
+        // }
     },
     register: async (req, res) => {
         const { name, email, password } = req.body;
         if (!name || !email || !password) {
             return res.status(400).json({ message: 'All fields are required.' });
+        }
+
+        const userExists = await usersDao.findByEmail(email);
+
+        if (userExists) {
+            return res.status(409).json({
+                error: "User already exists"
+            });
         }
        
         
