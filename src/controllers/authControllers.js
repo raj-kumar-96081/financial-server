@@ -1,4 +1,3 @@
-const users= require('../dao/userDb');
 const userDao=require('../dao/userDao');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -26,7 +25,7 @@ const authController={
 
         const IsMatch= await bcrypt.compare(password,user.password);
 
-        if (!isPasswordMatch) {
+        if (!IsMatch) {
             return res.status(401).json({
                 error: "Invalid credentials"
             });
@@ -69,7 +68,7 @@ const authController={
             return res.status(400).json({ message: 'All fields are required.' });
         }
 
-        const userExists = await usersDao.findByEmail(email);
+        const userExists = await userDao.findByEmail(email);
 
         if (userExists) {
             return res.status(409).json({

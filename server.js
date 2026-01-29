@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const mongoose=require('mongoose');
-
+const cors=require('cors');
 const authRoutes = require('./src/routes/authRoutes');
 const groupRoutes=require('./src/routes/groupRoutes');
 const cookieparser=require('cookie-parser');
@@ -10,7 +10,18 @@ const cookieparser=require('cookie-parser');
 mongoose.connect(process.env.MONGO_DB_URL)
     .then(()=> console.log("Connected to MongoDB"))
     .catch((err)=> console.log("Error connecting to MongoDB:", err));
+
+const corsOptions={
+    origin:process.env.CLIENT_URL,
+    credentials:true,
+    optionSuccessStatus:200
+};
+
+
 const app = express();
+
+app.use(cors(corsOptions));
+
 app.use(express.json()); // Middleware to parse JSON request bodies
 app.use(cookieparser());//Middleware
 
