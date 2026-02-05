@@ -44,10 +44,12 @@ const groupDao = {
      * Returns audit/settlement information
      */
     getAuditLog: async (groupId) => {
-        return await Group.findById(groupId).select({
-            paymentStatus: 1,
-            _id: 0
-        });
+        const group = await Group.findById(groupId).select('paymentStatus.date');
+        // return await Group.findById(groupId).select({
+        //     paymentStatus: 1,
+        //     _id: 0
+        // });
+        return group ? group.paymentStatus.date : null;
     }
 };
 

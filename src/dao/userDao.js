@@ -1,33 +1,38 @@
-const User=require('../model/User');
+const User = require('../model/User');
 
-const userDao={
-    findByEmail: async(email)=>{
-        const user=await User.findOne({email});
+const userDao = {
+    findByEmail: async (email) => {
+        const user = await User.findOne({ email });
         return user;
     },
 
-    create: async(userData)=>{
-        const newUser=new User(userData);
-        try{
-            
+    findById: async (id) => {
+        const user = await User.findById(id);
+        return user;
+    },
+
+    create: async (userData) => {
+        const newUser = new User(userData);
+        try {
+
             return await newUser.save();
-        }catch(error){
-            if(error.code===11000){
-                const err=new Error()
-                err.code='USER_EXIST';
+        } catch (error) {
+            if (error.code === 11000) {
+                const err = new Error()
+                err.code = 'USER_EXIST';
                 throw err;
-                
+
             }
-            else{
+            else {
                 console.log(error);
-                const err=new Error('Something went wrong while communicating with DB')
-                err.code='INTERNAL_SERVER_ERROR';
-                throw err;
+                // const err = new Error('Something went wrong while communicating with DB')
+                // err.code = 'INTERNAL_SERVER_ERROR';
+                throw new Error({
+                    message: `${error}`
+                });
             }
         }
-        
-
     },
 };
 
-module.exports=userDao;
+module.exports = userDao;
