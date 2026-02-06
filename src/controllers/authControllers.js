@@ -4,21 +4,22 @@ const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 const emailService = require('../services/emailServices');
 const { validationResult } = require('express-validator');
+const { ADMIN_ROLE } = require('../utility/userRoles');
 
 
-const generateAccessToken = (user) =>
-    jwt.sign(
-        { userId: user._id, name: user.name, email: user.email },
-        process.env.JWT_SECRET,
-        { expiresIn: "1h" } // change to "1m" for testing
-    );
+// const generateAccessToken = (user) =>
+//     jwt.sign(
+//         { userId: user._id, name: user.name, email: user.email },
+//         process.env.JWT_SECRET,
+//         { expiresIn: "1h" } // change to "1m" for testing
+//     );
 
-const generateRefreshToken = (user) =>
-    jwt.sign(
-        { email: user.email },
-        process.env.REFRESH_SECRET,
-        { expiresIn: "7d" }
-    );
+// const generateRefreshToken = (user) =>
+//     jwt.sign(
+//         { email: user.email },
+//         process.env.REFRESH_SECRET,
+//         { expiresIn: "7d" }
+//     );
 
 
 const authController = {
@@ -33,15 +34,8 @@ const authController = {
 
         const { email, password } = req.body;
 
-        // if (!email || !password) {
-        //     return req.status(400).json({
-        //         message: "Both fields are mandatory"
-        //     });
-        // }
-
-        // const user = users.find(u => u.email === email && u.password === password);
-
         const user = await userDao.findByEmail(email);
+
 
         if (!user) {
             return res.status(401).json({
@@ -52,7 +46,7 @@ const authController = {
             return res.status(403).json({ error: "Please login using Google" });
         }
 
-        const IsMatch = await bcrypt.compare(password, user.password);
+        const IsMatch = await bcrypt.compare(password, user?.password);
 
         if (!IsMatch) {
             return res.status(401).json({
@@ -60,59 +54,95 @@ const authController = {
             });
         }
 
-        const accessToken = generateAccessToken(user);
-        const refreshToken = generateRefreshToken(user);
-
-        res
-            .cookie("jwtToken", accessToken, {
-                httpOnly: true,
-                secure: false,
-                sameSite: "strict",
-                maxAge: 60 * 60 * 1000
-            })
-            .cookie("refreshToken", refreshToken, {
-                httpOnly: true,
-                secure: false,
-                sameSite: "strict",
-                maxAge: 7 * 24 * 60 * 60 * 1000
-            });
-
-        // CREATE JWT
-        // const token = jwt.sign(
-        //     { userId: user._id, email: user.email },
-        //     process.env.JWT_SECRET,
-        //     { expiresIn: '1h' }
-        // );
-
-        // //  SET COOKIE
-        // res.cookie('jwtToken', token, {
-        //     httpOnly: true,
-        //     secure: false, // true only in HTTPS
-        //     sameSite: 'strict'
-        // });
-
-        return res.status(200).json({
-            user: {
-                id: user._id,
+        if (user && IsMatch) {
+            user.role = user.role ? user.role : ADMIN_ROLE;
+            user.adminId = user.adminId ? user.adminId : user._id;
+            const token = jwt.sign({
                 name: user.name,
                 email: user.email,
-            },
-            message: "Login successful"
+                _id: user._id,
+                role: user.role ? user.role : ADMIN_ROLE,
+                adminId: user.adminId ? user.adminId : user._id,
+            }, process.env.JWT_SECRET, { expiresIn: '1h' }
 
-        });
+            );
+            res.cookie("jwtToken", token, {
+                httpOnly: true,
+                secure: false,
+                // domain: 'localhost',
+                sameSite: "strict",
+                path: '/'
+            });
+            return res.status(200).json({
+                user: {
+                    id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role,
 
-        // if (user && IsMatch) {
-        //     return res.status(200).json({
-        //         message: `Login Successful.           Welcome ${user.name}`,
-        //         user:user
-        //     });
-        // }
-        // else {
-        //     return req.status(400).json({
-        //         message: "Incorrect email or password"
-        //     });
-        // }
+                },
+                message: "Login successful"
+
+            });
+        } else {
+            return res.status(400).json({
+                message: 'Invalid email or password'
+            });
+        }
     },
+
+    // const accessToken = generateAccessToken(user);
+    // const refreshToken = generateRefreshToken(user);
+
+    // res.cookie("jwtToken", accessToken, {
+    //     httpOnly: true,
+    //     secure: false,
+    //     sameSite: "strict",
+    //     maxAge: 60 * 60 * 1000
+    // })
+    // .cookie("refreshToken", refreshToken, {
+    //     httpOnly: true,
+    //     secure: false,
+    //     sameSite: "strict",
+    //     maxAge: 7 * 24 * 60 * 60 * 1000
+    // });
+
+    // CREATE JWT
+    // const token = jwt.sign(
+    //     { userId: user._id, email: user.email },
+    //     process.env.JWT_SECRET,
+    //     { expiresIn: '1h' }
+    // );
+
+    // //  SET COOKIE
+    // res.cookie('jwtToken', token, {
+    //     httpOnly: true,
+    //     secure: false, // true only in HTTPS
+    //     sameSite: 'strict'
+    // });
+
+    // return res.status(200).json({
+    //     user: {
+    //         id: user._id,
+    //         name: user.name,
+    //         email: user.email,
+    //     },
+    //     message: "Login successful"
+
+    // });
+
+    // if (user && IsMatch) {
+    //     return res.status(200).json({
+    //         message: `Login Successful.           Welcome ${user.name}`,
+    //         user:user
+    //     });
+    // }
+    // else {
+    //     return req.status(400).json({
+    //         message: "Incorrect email or password"
+    //     });
+    // }
+
     register: async (req, res) => {
         const { name, email, password } = req.body;
         if (!name || !email || !password) {
@@ -140,7 +170,8 @@ const authController = {
         userDao.create({
             name: name,
             email: email,
-            password: hashedPassword
+            password: hashedPassword,
+            role: ADMIN_ROLE
         })
             .then(u => {
                 return res.status(200).json({
@@ -175,56 +206,84 @@ const authController = {
     isUserLoggedIn: async (request, response) => {
         try {
             const token = request.cookies?.jwtToken;
+            console.log(token);
             if (!token) {
                 return response.status(401).json({
                     message: 'Unauthorized Access'
                 });
             }
 
-            jwt.verify(token, process.env.JWT_SECRET, (error, user) => {
-                if (error) {
-                    return response.status(401).json({
-                        message: 'Invalid token'
-                    });
-                } else {
-                    response.json({
-                        user: user
-                    });
-                }
-            });
-            const refreshToken = request.cookies?.refreshToken;
-            if (!refreshToken) {
-                return response.status(401).json({ message: "Not authenticated" });
+            try {
+                const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+                // Re-set the cookie to extend session (optional)
+                response.cookie("jwtToken", token, {
+                    httpOnly: true,
+                    secure: false, // Set to true if using HTTPS
+                    sameSite: "strict",
+                    maxAge: 60 * 60 * 1000,
+                    path: '/'
+                });
+
+                return response.status(200).json({
+                    user: {
+                        id: decoded._id, // Match the key you used in jwt.sign
+                        name: decoded.name,
+                        email: decoded.email,
+                        role: decoded.role
+                    }
+                });
+            } catch (error) {
+                return response.status(401).json({
+                    message: 'Invalid token'
+                });
             }
 
-            const decodedRefresh = jwt.verify(
-                refreshToken,
-                process.env.REFRESH_SECRET
-            );
+            // jwt.verify(token, process.env.JWT_SECRET, (error, user) => {
+            //     if (error) {
+            //         return response.status(401).json({
+            //             message: 'Invalid token'
+            //         });
+            //     } else {
+            //         response.json({
+            //             user: user
+            //         });
+            //     }
+            // });
+            // const refreshToken = request.cookies?.refreshToken;
+            // if (!refreshToken) {
+            //     return response.status(401).json({ message: "Not authenticated" });
+            // }
 
-            const user = await userDao.findByEmail(decodedRefresh.email);
+            // const decodedRefresh = jwt.verify(
+            //     refreshToken,
+            //     process.env.REFRESH_SECRET
+            // );
 
-            if (!user) {
-                return response.status(401).json({ message: "User not found" });
-            }
+            // const user = await userDao.findByEmail(decodedRefresh.email);
+
+            // if (!user) {
+            //     return response.status(401).json({ message: "User not found" });
+            // }
 
 
-            const newAccessToken = generateAccessToken(user);
+            // const newAccessToken = generateAccessToken(user);
 
-            response.cookie("jwtToken", newAccessToken, {
-                httpOnly: true,
-                secure: false,
-                sameSite: "strict",
-                maxAge: 60 * 60 * 1000
-            });
+            // response.cookie("jwtToken", token, {
+            //     httpOnly: true,
+            //     secure: false,
+            //     sameSite: "strict",
+            //     maxAge: 60 * 60 * 1000
+            // });
 
-            return response.status(200).json({
-                user: {
-                    id: user._id,
-                    name: user.name,
-                    email: user.email
-                }
-            });
+            // return response.status(200).json({
+            //     user: {
+            //         id: user._id,
+            //         name: user.name,
+            //         email: user.email,
+            //         role: user.role
+            //     }
+            // });
 
 
         } catch (error) {
@@ -240,9 +299,8 @@ const authController = {
 
     logout: async (request, response) => {
         try {
-            response
-                .clearCookie("jwtToken")
-                .clearCookie("refreshToken");
+            response.clearCookie('jwtToken')
+            // .clearCookie("refreshToken");
             // response.clearCookie('jwtToken');
             return response.json({ message: 'Logout successful' });
         } catch (error) {
@@ -274,8 +332,23 @@ const authController = {
             let user = await userDao.findByEmail(email);
 
             if (!user) {
-                user = await userDao.create({ name, email, googleId });
+                user = await userDao.create({
+                    name: name,
+                    email: email,
+                    googleId: googleId,
+                    role: ADMIN_ROLE
+                });
             }
+
+            const token = jwt.sign({
+                name: user.name,
+                email: user.email,
+                googleId: user.googleId,
+                id: user._id,
+                role: user.role ? user.role : ADMIN_ROLE,
+                adminId: user.adminId ? user.adminId : user._id,
+            }, process.env.JWT_SECRET, { expiresIn: '1h' }
+            );
 
             const accessToken = generateAccessToken(user);
             const refreshToken = generateRefreshToken(user);

@@ -42,6 +42,7 @@ const groupDao = {
 
     /**
      * Returns audit/settlement information
+     * @params{*} groupId
      */
     getAuditLog: async (groupId) => {
         const group = await Group.findById(groupId).select('paymentStatus.date');

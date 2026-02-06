@@ -33,16 +33,16 @@ const groupController = {
 
         } catch (error) {
             console.log(error);
-            return response.status(500).json({ message: "Internal server error" });
+            return response.status(500).json({ message: "Error creating group- server-groupController" });
         }
     },
 
     updateGroup: async (request, response) => {
         try {
             const updatedGroup = await groupDao.updateGroup(request.body);
-             if (!updatedGroup) { 
-                return response.status(404).json({ message: "Group not found" }); 
-            } 
+            if (!updatedGroup) {
+                return response.status(404).json({ message: "Group not found" });
+            }
             // response.status(200).json(updatedGroup);
             response.status(200).json(updatedGroup);
         } catch (error) {
@@ -58,7 +58,7 @@ const groupController = {
             return response.status(200).json(group);
         } catch (error) {
             console.log(error);
-            return response.status(500).json({ message:  "Error adding members"  });
+            return response.status(500).json({ message: "Error adding members" });
         }
     },
 
@@ -69,7 +69,7 @@ const groupController = {
             return response.status(200).json(group);
         } catch (error) {
             console.log(error);
-            return response.status(500).json({ message:  "Error removing members"  });
+            return response.status(500).json({ message: "Error removing members" });
         }
     },
 
@@ -78,22 +78,22 @@ const groupController = {
             // const { email } = request.params;
             const email = request.user.email;
             const groups = await groupDao.getGroupByEmail(email);
-            return response.status(200).json(groups);
+            return response.status(200).json(groups || []);
         } catch (error) {
             console.log(error);
             return response.status(500).json({ message: "Error Fetching groups" });
         }
     },
 
-     getGroupsByPaymentStatus: async (request, response) => { 
-        try { 
-            const { isPaid } = request.query; 
-            const status = isPaid === 'true'; 
+    getGroupsByPaymentStatus: async (request, response) => {
+        try {
+            const { isPaid } = request.query;
+            const status = isPaid === 'true';
             const email = request.user.email;
 
-            const groups = await groupDao.getGroupByStatus(email,status); 
-            response.status(200).json(groups); 
-        } catch (error) { 
+            const groups = await groupDao.getGroupByStatus(email, status);
+            response.status(200).json(groups);
+        } catch (error) {
             response.status(500).json({ message: "Error filtering groups" });
         }
     },
@@ -105,7 +105,7 @@ const groupController = {
             return response.status(200).json(auditLog);
         } catch (error) {
             console.log(error);
-            return response.status(500).json({ message:  "Error fetching audit log"  });
+            return response.status(500).json({ message: "Error fetching audit log" });
         }
     }
 };
