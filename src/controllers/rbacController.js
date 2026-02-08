@@ -1,4 +1,4 @@
-const rbacDao = require("../dao/rbacDao");
+const rbacDao = require('../dao/rbacDao');
 const bcrypt = require('bcryptjs');
 const { generateTemporaryPassword } = require("../utility/passwordUtil");
 const emailService = require("../services/emailServices");
@@ -10,7 +10,7 @@ const rbacController = {
             const adminUser = request.user;
             const { name, email, role } = request.body;
 
-            if (!USER_ROLES.include(role)) {
+            if (!Object.values(USER_ROLES).includes(role)) {
                 return response.status(400).json({
                     message: "Invalid role"
                 });

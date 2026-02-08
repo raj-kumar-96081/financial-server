@@ -206,7 +206,7 @@ const authController = {
     isUserLoggedIn: async (request, response) => {
         try {
             const token = request.cookies?.jwtToken;
-            console.log(token);
+            // console.log(token);
             if (!token) {
                 return response.status(401).json({
                     message: 'Unauthorized Access'

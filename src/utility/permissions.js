@@ -14,6 +14,7 @@ const permissions = {
     ],
     [MANAGER_ROLE]: [
         'user:view',
+        'user:update',
         'group:create',
         'group:update',
         'group:view'

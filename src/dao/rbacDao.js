@@ -1,5 +1,5 @@
 const User = require("../model/User");
-const PasswordUtil=require("../utility/passwordUtil");
+const PasswordUtil = require("../utility/passwordUtil");
 
 
 
@@ -36,9 +36,9 @@ const rbacDao = {
     },
 
     getUsersByAdminId: async (adminId) => {
-        return await User.find((adminId)).select("~password");
+        return await User.find({ adminId }).select("-password");
     },
 
 };
 
-module.export = rbacDao;
+module.exports = rbacDao;
