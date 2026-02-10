@@ -7,10 +7,31 @@ const groupController = {
             const user = request.user;
             const { name, description, membersEmail, thumbnail } = request.body;
 
+            // This is to ensure backward compatibility for already created users
+
+            // not having credits attribute.
+            if (userInfo.credits === undefined) {
+                userInfo.credits = 1;
+
+            }
+
+            if (Number(userInfo.credits) === 0) {
+
+                return response.status(400).json({
+
+                    message: 'You do not have enough credits to perform this operation'
+
+                });
+
+            }
+
             let allMembers = [user.email];
             if (membersEmail && Array.isArray(membersEmail)) {
                 allMembers = [...new Set([...allMembers, ...membersEmail])];
             }
+            const userInfo = await userDao.findByEmail(user.email);
+
+
 
             const newGroup = await groupDao.createdGroup({
                 name,
@@ -25,6 +46,9 @@ const groupController = {
                     isPaid: false
                 }
             });
+
+            userInfo.credits -= 1;
+            userInfo.save();
 
             return response.status(201).json({
                 message: 'Group created',
@@ -53,7 +77,8 @@ const groupController = {
 
     addMembers: async (request, response) => {
         try {
-            const { groupId, membersEmail } = request.body;
+            const { groupId, emails } = request.body;
+            const membersEmail = [emails.memberEmail];
             const group = await groupDao.addMembers(groupId, ...membersEmail);
             return response.status(200).json(group);
         } catch (error) {
@@ -77,8 +102,31 @@ const groupController = {
         try {
             // const { email } = request.params;
             const email = request.user.email;
-            const groups = await groupDao.getGroupByEmail(email);
-            return response.status(200).json(groups || []);
+            const page = parseInt(request.query.page) || 1;
+            const limit = parseInt(request.query.limit) || 10;
+            const skip = (page - 1) * limit;
+
+
+            const sortBy = request.query.sortBy || 'newest';
+            let sortOptions = { createdAt: -1 };
+
+            if (sortBy === "oldest") {
+                sortOptions = { createdAt: 1 };
+            }
+
+            const { groups, totalCount } = await groupDao.getGroupsPaginated(email, limit, skip, sortOptions);
+            // const groups = await groupDao.getGroupByEmail(email);
+            // return response.status(200).json(groups || []);
+            response.status(200).json({
+                groups: groups,
+                pagination: {
+                    totalItems: totalCount,
+                    totalPages: Math.ceil(totalCount / limit),
+                    currentPage: page,
+                    itemsPerPage: limit
+                }
+            });
+
         } catch (error) {
             console.log(error);
             return response.status(500).json({ message: "Error Fetching groups" });

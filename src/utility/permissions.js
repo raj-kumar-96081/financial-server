@@ -9,7 +9,8 @@ const permissions = {
         'group:create',
         'group:update',
         'group:delete',
-        'group:view'
+        'group:view',
+        'payment:create'
 
     ],
     [MANAGER_ROLE]: [

@@ -350,22 +350,14 @@ const authController = {
             }, process.env.JWT_SECRET, { expiresIn: '1h' }
             );
 
-            const accessToken = generateAccessToken(user);
-            const refreshToken = generateRefreshToken(user);
 
-            res
-                .cookie("jwtToken", accessToken, {
-                    httpOnly: true,
-                    secure: false,
-                    sameSite: "strict",
-                    maxAge: 60 * 60 * 1000
-                })
-                .cookie("refreshToken", refreshToken, {
-                    httpOnly: true,
-                    secure: false,
-                    sameSite: "strict",
-                    maxAge: 7 * 24 * 60 * 60 * 1000
-                });
+
+            res.cookie("jwtToken", token, {
+                httpOnly: true,
+                secure: false,
+                sameSite: "strict",
+                maxAge: 60 * 60 * 1000
+            })
 
             return res.status(200).json({
                 message: "Google login successful",

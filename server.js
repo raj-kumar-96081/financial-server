@@ -6,6 +6,8 @@ const authRoutes = require('./src/routes/authRoutes');
 const groupRoutes = require('./src/routes/groupRoutes');
 const cookieparser = require('cookie-parser');
 const rbacRoutes = require('./src/routes/rbacRoutes');
+const paymentsRoutes = require('./src/routes/paymentRoutes');
+const profileRoutes = require('./src/routes/profileRoutes');
 
 mongoose.connect(process.env.MONGO_DB_URL)
     .then(() => console.log("Connected to MongoDB"))
@@ -29,6 +31,8 @@ app.use(cookieparser());//Middleware
 app.use('/auth', authRoutes);
 app.use('/groups', groupRoutes);
 app.use('/users', rbacRoutes);
+app.use('/payments', paymentsRoutes);
+app.use('/profile', profileRoutes);
 
 
 app.listen(5001, () => {

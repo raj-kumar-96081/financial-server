@@ -24,6 +24,7 @@ const rbacController = {
             const user = await rbacDao.create(email, name, role, hashedPassword, adminUser._id);
 
             try {
+
                 await emailService.send(
                     email, 'temporary Password',
                     `Your temporary Password is: ${tempPassword}`
