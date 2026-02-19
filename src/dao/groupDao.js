@@ -72,6 +72,10 @@ const groupDao = {
 
         return { groups, totalCount };
     },
+
+    getGroupById: async (groupId) => {
+        return await Group.findById(groupId);
+    }
 };
 
 module.exports = groupDao;

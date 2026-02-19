@@ -19,7 +19,6 @@ const permissions = {
         'group:create',
         'group:update',
         'group:view'
-
     ],
     [VIEWER_ROLE]: [
 

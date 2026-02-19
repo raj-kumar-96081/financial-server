@@ -2,8 +2,10 @@ const Razorpay = require('razorpay');
 
 const crypto = require('crypto');
 
-const { CREDIT_TO_PAISA_MAPPING } = require('../constants/paymentConstants');
+const { CREDIT_TO_PAISA_MAPPING, PLAN_IDS } = require('../constants/paymentConstants');
 const Users = require('../model/User');
+// const { request } = require('http');
+
 
 const razorpayClient = new Razorpay({
     key_id: process.env.RAZORPAY_KEY_ID,
@@ -25,7 +27,7 @@ const paymentsController = {
 
             const amountInPaise = CREDIT_TO_PAISA_MAPPING[credits];
 
-            const order = await razorpayClient.orders.createOrder({
+            const order = await razorpayClient.orders.create({
                 amount: amountInPaise,
                 currency: 'INR',
                 receipt: `receipt_${Date.now()}`
@@ -34,7 +36,7 @@ const paymentsController = {
             return response.json({ order: order });
 
         } catch (error) {
-            return response.status(500).json({ message: 'Internal server error' });
+            return response.status(500).json({ message: 'Order cant be created/ Error!' });
         }
     },
 
@@ -67,6 +69,135 @@ const paymentsController = {
 
         } catch (error) {
             return response.status(500).json({ message: 'Internal server error' });
+        }
+
+    },
+    createSubscription: async (request, response) => {
+        try {
+            const { plan_name } = request.body;
+            if (!PLAN_IDS[plan_name]) {
+                return response.status(500).json({
+                    message: "Invalid plan selected"
+                });
+            }
+
+            const plan = PLAN_IDS[plan_name];
+            const subscription = await razorpayClient.subscriptions.create({
+                plan_id: plan.id,
+                customer_notify: 1,
+                total_count: plan.totalBillingCycleCount,
+                notes: {
+                    userId: request.user._id
+                }
+            });
+            return response.json({ subscription });
+
+        } catch (error) {
+            console.log(error);
+            return response.status(500).json({ message: " Error creating subscription" });
+        }
+    },
+    captureSubscription: async (request, response) => {
+        try {
+            const { subscriptionId } = request.body;
+            const subscription = await razorpayClient.subscriptions.fetch(subscriptionId);
+            const user = await Users.findById({ _id: request.user._id });
+
+            user.subscription = {
+                subscriptionId: subscriptionId,
+                planId: subscription.plan_id,
+                status: subscription.status
+            }
+            await user.save();
+            response.json({ user: user });
+
+        } catch (error) {
+            console.log(error);
+            return response.status(500).json({ message: " Error capturing subscription" });
+        }
+
+    },
+
+    handleWebhookEvents: async (request, response) => {
+        try {
+            console.log("Received Event");
+            const signature = request.headers["x-razorpay-signature"];
+            const body = request.body;
+            const expectedSignature = crypto
+                .createHmac('sha256', process.env.RAZORPAY_WEBHOOK_SECRET)
+                .update(body)
+                .digest('hex');
+
+            if (expectedSignature !== signature) {
+                console.log("Invalid signature for webhook event");
+                return response.status(400).send("Invalid signature");
+            }
+            console.log('signature verified successfully for webhook event');
+            const payload = JSON.parse(body);
+            console.log(JSON.stringify(payload, null, 2));
+
+            const event = payload.event;
+            const subscriptionData = payload.payload.subscription.entity;
+            const razorpaySubscriptionId = subscriptionData.id;
+            const userId = subscriptionData.notes?.userId;
+
+            if (!userId) {
+                console.log("UserId not found in the notes");
+                return response.status(400).send("UserId not found in the notes");
+            }
+
+            let newStatus;
+            switch (event) {
+                case 'subscription.activated':
+                    newStatus = 'active';
+                    break;
+                case 'subscription.pending':
+                    newStatus = 'pending';
+                    break;
+                case 'subscription.cancelled':
+                    newStatus = 'cancelled';
+                    break;
+                case 'subscription.complete':
+                    newStatus = 'completed';
+                    break;
+                default:
+                    console.log(`unhandled event received: ${event}`);
+                    return response.status(200).send(`unhandled event received: ${event}`);
+            }
+
+            const user = await Users.findByIdAndUpdate(
+                { _id: userId },
+                {
+                    $set: {
+                        'subscription.subscriptionId': razorpaySubscriptionId,
+                        'subscription.status': newStatus,
+                        'subscription.planId': subscriptionData.plan_id,
+                        'subscription.start': subscriptionData.start_at
+                            ? new Date(subscriptionData.start_at * 1000) : null,
+                        'subscription.end': subscriptionData.end_at
+                            ? new Date(subscriptionData.end_at * 1000) : null,
+                        'subscription.lastBillDate': subscriptionData.current_start
+                            ? new Date(subscriptionData.current_start * 1000) : null,
+                        'subscription.nextBillDate': subscriptionData.current_end
+                            ? new Date(subscriptionData.current_end * 1000) : null,
+                        'subscription.paymentsMode': subscriptionData.paid_count,
+                        'subscription.paymentRemaining': subscriptionData.remaining_count,
+                    }
+                },
+                { new: true }
+
+            );
+            if (!user) {
+                console.log("No user found with the given userId");
+                return response.status(400).send("No user found with the given userId");
+            }
+
+            console.log(`Updated subscription status for the user ${user.email} to ${newStatus}`);
+            return response.status(200).send(`Event processed for user: ${user.email} with UserId: ${userId}`);
+
+        } catch (error) {
+            console.log(error);
+            return response.status(500).json({ message: " Error webhook subscription" });
         }
 
     },

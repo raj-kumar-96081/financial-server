@@ -146,6 +146,27 @@ const groupController = {
         }
     },
 
+    getGroupById: async (req, res) => {
+        try {
+            const { groupId } = req.params;
+            const group = await groupDao.getGroupById(req.params.groupId);
+
+            console.log("Fetched Group:", group);
+            console.log("Requested groupId:", groupId);
+            console.log("Type:", typeof groupId);
+
+            if (!group) {
+                return res.status(404).json({ message: "Group not found" });
+            }
+
+            res.json(group);
+
+        } catch (error) {
+            console.error("Get Group By ID Error:", error);
+            res.status(500).json({ message: "Error fetching group" });
+        }
+    },
+
     getAuditLog: async (request, response) => {
         try {
             const { groupId } = request.params;

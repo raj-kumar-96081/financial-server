@@ -8,6 +8,8 @@ const cookieparser = require('cookie-parser');
 const rbacRoutes = require('./src/routes/rbacRoutes');
 const paymentsRoutes = require('./src/routes/paymentRoutes');
 const profileRoutes = require('./src/routes/profileRoutes');
+const expenseRoutes = require('./src/routes/expenseRoutes');
+
 
 mongoose.connect(process.env.MONGO_DB_URL)
     .then(() => console.log("Connected to MongoDB"))
@@ -24,7 +26,14 @@ const app = express();
 
 app.use(cors(corsOptions));
 
-app.use(express.json()); // Middleware to parse JSON request bodies
+// app.use(express.json()); // Middleware to parse JSON request bodies
+app.use((request, response, next) => {
+    if (request.originalUrl.startsWith('/payments/webhook')) {
+        console.log('Webhook request, skipping json middleware');
+        next();
+    }
+    express.json()(request, response, next);
+})
 app.use(cookieparser());//Middleware
 
 
@@ -33,6 +42,7 @@ app.use('/groups', groupRoutes);
 app.use('/users', rbacRoutes);
 app.use('/payments', paymentsRoutes);
 app.use('/profile', profileRoutes);
+app.use("/api/expenses", expenseRoutes);
 
 
 app.listen(5001, () => {
