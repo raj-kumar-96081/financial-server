@@ -1,5 +1,5 @@
 
-
+const expense = require("../model/expense");
 const expenseService = require("../services/expenseService");
 
 exports.createExpense = async (req, res) => {
@@ -71,5 +71,90 @@ exports.settleGroup = async (req, res) => {
     } catch (error) {
         console.error("Settle Error:", error);
         res.status(500).json({ message: "Error settling group" });
+    }
+};
+
+// exports.getRecentExpensesForUser = async (req, res) => {
+//     try {
+//         const userEmail = req.user.email;
+
+//         const expenses = await expense.find({
+//             $or: [
+//                 { paidByEmail: userEmail },
+//                 { "splits.email": userEmail },
+//             ],
+//         })
+//             .sort({ createdAt: -1 })
+//             .limit(5)
+//             .populate("groupId", "name"); // IMPORTANT
+
+//         res.json(expenses);
+
+//     } catch (error) {
+//         console.error("Recent Expenses Error:", error);
+//         res.status(500).json({ message: "Error fetching recent expenses" });
+//     }
+// };
+
+// exports.getRecentExpensesForUser = async (req, res) => {
+//     try {
+//         if (!req.user?.email) {
+//             return res.status(401).json({
+//                 message: "Unauthorized",
+//             });
+//         }
+
+//         const userEmail = req.user.email;
+
+//         const expenses = await Expense.find({
+//             $or: [
+//                 { paidByEmail: userEmail },
+//                 {
+//                     splits: {
+//                         $elemMatch: { email: userEmail },
+//                     },
+//                 },
+//             ],
+//         })
+//             .sort({ createdAt: -1 })
+//             .limit(5)
+//             .populate("groupId", "name");
+
+//         res.status(200).json(expenses);
+
+//     } catch (error) {
+//         console.error("Recent Expenses Error:", error);
+//         res.status(500).json({
+//             message: "Error fetching recent expenses",
+//             error: error.message,
+//         });
+//     }
+// };
+
+exports.getRecentExpensesForUser = async (req, res) => {
+    try {
+        if (!req.user?.email) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+
+        const userEmail = req.user.email;
+
+        const expenses = await expense.find({
+            $or: [
+                { paidByEmail: userEmail },
+                { splits: { $elemMatch: { email: userEmail } } },
+            ],
+        })
+            .sort({ createdAt: -1 })
+            .limit(6);
+
+        res.status(200).json(expenses);
+
+    } catch (error) {
+        console.error("🔥 Recent Expenses Error:", error);
+        res.status(500).json({
+            message: "Error fetching recent expenses",
+            error: error.message,
+        });
     }
 };
