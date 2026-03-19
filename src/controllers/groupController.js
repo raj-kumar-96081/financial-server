@@ -1,4 +1,5 @@
 const groupDao = require("../dao/groupDao");
+const userDao = require("../dao/userDao");
 
 const groupController = {
 
@@ -8,11 +9,10 @@ const groupController = {
             const { name, description, membersEmail, thumbnail } = request.body;
 
             // This is to ensure backward compatibility for already created users
-
+            const userInfo = await userDao.findByEmail(user.email);
             // not having credits attribute.
             if (userInfo.credits === undefined) {
                 userInfo.credits = 1;
-
             }
 
             if (Number(userInfo.credits) === 0) {
@@ -29,7 +29,7 @@ const groupController = {
             if (membersEmail && Array.isArray(membersEmail)) {
                 allMembers = [...new Set([...allMembers, ...membersEmail])];
             }
-            const userInfo = await userDao.findByEmail(user.email);
+
 
 
 
@@ -67,7 +67,6 @@ const groupController = {
             if (!updatedGroup) {
                 return response.status(404).json({ message: "Group not found" });
             }
-            // response.status(200).json(updatedGroup);
             response.status(200).json(updatedGroup);
         } catch (error) {
             console.log(error);
@@ -100,7 +99,6 @@ const groupController = {
 
     getGroupByEmail: async (request, response) => {
         try {
-            // const { email } = request.params;
             const email = request.user.email;
             const page = parseInt(request.query.page) || 1;
             const limit = parseInt(request.query.limit) || 10;
@@ -115,8 +113,7 @@ const groupController = {
             }
 
             const { groups, totalCount } = await groupDao.getGroupsPaginated(email, limit, skip, sortOptions);
-            // const groups = await groupDao.getGroupByEmail(email);
-            // return response.status(200).json(groups || []);
+    
             response.status(200).json({
                 groups: groups,
                 pagination: {
