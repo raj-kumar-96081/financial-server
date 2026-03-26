@@ -11,12 +11,15 @@ const profileRoutes = require('./src/routes/profileRoutes');
 const expenseRoutes = require('./src/routes/expenseRoutes');
 
 
-mongoose.connect(process.env.MONGO_DB_URL)
+mongoose.connect(process.env.MONGO_DB_ATLAS_URI )
     .then(() => console.log("Connected to MongoDB"))
     .catch((err) => console.log("Error connecting to MongoDB:", err));
 
 const corsOptions = {
-    origin: process.env.CLIENT_URL,
+    origin:[
+        process.env.CLIENT_URL,
+        process.env.FRONTEND_URL
+    ],
     credentials: true,
     optionSuccessStatus: 200
 };
@@ -30,7 +33,7 @@ app.use(cors(corsOptions));
 app.use((request, response, next) => {
     if (request.originalUrl.startsWith('/payments/webhook')) {
         console.log('Webhook request, skipping json middleware');
-        next();
+        return next();
     }
     express.json()(request, response, next);
 })
@@ -44,7 +47,7 @@ app.use('/payments', paymentsRoutes);
 app.use('/profile', profileRoutes);
 app.use("/api/expenses", expenseRoutes);
 
-
-app.listen(5001, () => {
-    console.log("Expense server is running on port 5001");
+const PORT=process.env.PORT || 5001;
+app.listen(PORT, () => {
+    console.log(`Expense server is running on port ${PORT}`);
 })
