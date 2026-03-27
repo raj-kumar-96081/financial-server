@@ -16,14 +16,15 @@ mongoose.connect(process.env.MONGO_DB_ATLAS_URI)
     .catch((err) => console.log("Error connecting to MongoDB:", err));
 
 const corsOptions = {
-    origin: [
+    // origin: [
 
-        process.env.FRONTEND_URL
-        // process.env.CLIENT_URL,
-    ],
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    //     process.env.FRONTEND_URL
+    //     // process.env.CLIENT_URL,
+    // ],
+    origin: "https://expense-manager-app-sepia.vercel.app",
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
-    optionSuccessStatus: 200
+    optionsSuccessStatus: 200
 };
 
 
