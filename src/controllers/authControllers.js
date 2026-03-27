@@ -219,8 +219,8 @@ const authController = {
                 // Re-set the cookie to extend session (optional)
                 response.cookie("jwtToken", token, {
                     httpOnly: true,
-                    secure: false, // Set to true if using HTTPS
-                    sameSite: "strict",
+                    secure: true, // Set to true if using HTTPS
+                    sameSite: 'none',
                     maxAge: 60 * 60 * 1000,
                     path: '/'
                 });
@@ -354,8 +354,8 @@ const authController = {
 
             res.cookie("jwtToken", token, {
                 httpOnly: true,
-                secure: false,
-                sameSite: "strict",
+                secure: true,
+                sameSite: 'none',
                 maxAge: 60 * 60 * 1000
             })
 
