@@ -16,10 +16,12 @@ mongoose.connect(process.env.MONGO_DB_ATLAS_URI)
     .catch((err) => console.log("Error connecting to MongoDB:", err));
 
 const corsOptions = {
-    origin:[
-        // process.env.CLIENT_URL,
+    origin: [
+
         process.env.FRONTEND_URL
+        // process.env.CLIENT_URL,
     ],
+    methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
     optionSuccessStatus: 200
 };
@@ -47,7 +49,7 @@ app.use('/payments', paymentsRoutes);
 app.use('/profile', profileRoutes);
 app.use("/api/expenses", expenseRoutes);
 
-const PORT=process.env.PORT || 5001;
+const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
     console.log(`Expense server is running on port ${PORT}`);
 })
