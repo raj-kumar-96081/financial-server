@@ -68,9 +68,9 @@ const authController = {
             );
             res.cookie("jwtToken", token, {
                 httpOnly: true,
-                secure: false,
+                secure: true,
                 // domain: 'localhost',
-                sameSite: "strict",
+                sameSite: 'none',
                 path: '/'
             });
             return res.status(200).json({
