@@ -299,7 +299,11 @@ const authController = {
 
     logout: async (request, response) => {
         try {
-            response.clearCookie('jwtToken')
+            response.clearCookie('jwtToken', {
+                httpOnly: true,
+                secure: true,    // Required for cross-domain clearing
+                sameSite: 'none' // Required for cross-domain clearing
+            });
             // .clearCookie("refreshToken");
             // response.clearCookie('jwtToken');
             return response.json({ message: 'Logout successful' });
