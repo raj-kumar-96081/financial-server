@@ -11,13 +11,13 @@ const profileRoutes = require('./src/routes/profileRoutes');
 const expenseRoutes = require('./src/routes/expenseRoutes');
 
 
-mongoose.connect(process.env.MONGO_DB_ATLAS_URI )
+mongoose.connect(process.env.MONGO_DB_ATLAS_URI)
     .then(() => console.log("Connected to MongoDB"))
     .catch((err) => console.log("Error connecting to MongoDB:", err));
 
 const corsOptions = {
     origin:[
-        process.env.CLIENT_URL,
+        // process.env.CLIENT_URL,
         process.env.FRONTEND_URL
     ],
     credentials: true,

@@ -25,6 +25,7 @@
     "mongoose": "^9.1.5",
     "mongose": "^0.0.2-security",
     "nodemailer": "^7.0.13",
+    "nodemon": "^3.1.14",
     "razorpay": "^2.9.6",
     "start": "^5.1.0"
   }
