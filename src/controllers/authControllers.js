@@ -323,11 +323,11 @@ const authController = {
                 return res.status(401).json({ message: "Invalid Google request" });
             }
 
-            const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+            const client = new OAuth2Client(process.env.FRONTEND_URL);
 
             const googleResponse = await client.verifyIdToken({
                 idToken,
-                audience: process.env.GOOGLE_CLIENT_ID
+                audience: process.env.FRONTEND_URL
             });
 
             const payload = googleResponse.getPayload();
