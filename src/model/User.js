@@ -16,7 +16,9 @@ const subscriptionSchema = new mongoose.Schema({
 const userSchema = new mongoose.Schema({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    password: { type: String, required: function() {
+        return !this.googleId;
+    }},
     googleId: { type: String, required: false },
     resetOtp: { type: String },
     resetOtpExpiry: { type: Date },
