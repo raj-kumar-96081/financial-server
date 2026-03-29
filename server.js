@@ -22,7 +22,7 @@ const corsOptions = {
     //     // process.env.CLIENT_URL,
     // ],
     origin: "https://expense-manager-app-sepia.vercel.app",
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     credentials: true,
     optionsSuccessStatus: 200
 };
